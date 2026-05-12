@@ -4401,51 +4401,7 @@
     </div>
   </section>
 
-  <!-- ================== ADD POSITION MODAL ================== -->
-  <div class="snap-modal-backdrop" id="snapAddModal" role="dialog" aria-labelledby="snapAddTitle" aria-modal="true">
-    <div class="snap-modal">
-      <h2 id="snapAddTitle">Add <em>position</em></h2>
-      <div class="snap-modal-sub">Position is added locally and persists in this browser</div>
-      <div class="snap-form-row two-col">
-        <div>
-          <label for="snapInTicker">Ticker</label>
-          <input type="text" id="snapInTicker" maxlength="8" autocomplete="off" spellcheck="false" placeholder="AAPL" />
-        </div>
-        <div>
-          <label for="snapInShares">Shares</label>
-          <input type="text" id="snapInShares" inputmode="decimal" autocomplete="off" placeholder="10" />
-        </div>
-      </div>
-      <div class="snap-form-row two-col">
-        <div>
-          <label for="snapInAvgCost">Avg cost / share</label>
-          <input type="text" id="snapInAvgCost" inputmode="decimal" autocomplete="off" placeholder="150.00" />
-        </div>
-        <div>
-          <label for="snapInSector">Sector</label>
-          <select id="snapInSector">
-            <option value="Enterprise SaaS">Enterprise SaaS</option>
-            <option value="Observability / SaaS">Observability / SaaS</option>
-            <option value="Security analytics">Security analytics</option>
-            <option value="Semiconductors">Semiconductors</option>
-            <option value="Quantum">Quantum</option>
-            <option value="AI / Voice">AI / Voice</option>
-            <option value="Consulting">Consulting</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-      </div>
-      <div class="snap-form-row">
-        <label for="snapInNotes">Notes (optional)</label>
-        <textarea id="snapInNotes" placeholder="Thesis, target price, anything..."></textarea>
-      </div>
-      <div class="snap-form-error" id="snapFormError"></div>
-      <div class="snap-modal-actions">
-        <button type="button" class="snap-modal-btn" id="snapAddCancel">Cancel</button>
-        <button type="button" class="snap-modal-btn is-primary" id="snapAddSubmit">Add position</button>
-      </div>
-    </div>
-  </div>
+  <!-- ================== ADD POSITION MODAL (moved to top-level outside views) ================== -->
 
 
   <!-- ================== STATS STRIP ================== -->
@@ -5297,6 +5253,52 @@
       <button type="button" class="dock-add-btn" id="dockAddBtn" title="Add a position">+ Add</button>
     </footer>
   </aside>
+
+  <!-- ================== ADD POSITION MODAL (top-level so it overlays any view) ================== -->
+  <div class="snap-modal-backdrop" id="snapAddModal" role="dialog" aria-labelledby="snapAddTitle" aria-modal="true">
+    <div class="snap-modal">
+      <h2 id="snapAddTitle">Add <em>position</em></h2>
+      <div class="snap-modal-sub">Position is added locally and persists in this browser</div>
+      <div class="snap-form-row two-col">
+        <div>
+          <label for="snapInTicker">Ticker</label>
+          <input type="text" id="snapInTicker" maxlength="8" autocomplete="off" spellcheck="false" placeholder="AAPL" />
+        </div>
+        <div>
+          <label for="snapInShares">Shares</label>
+          <input type="text" id="snapInShares" inputmode="decimal" autocomplete="off" placeholder="10" />
+        </div>
+      </div>
+      <div class="snap-form-row two-col">
+        <div>
+          <label for="snapInAvgCost">Avg cost / share</label>
+          <input type="text" id="snapInAvgCost" inputmode="decimal" autocomplete="off" placeholder="150.00" />
+        </div>
+        <div>
+          <label for="snapInSector">Sector</label>
+          <select id="snapInSector">
+            <option value="Enterprise SaaS">Enterprise SaaS</option>
+            <option value="Observability / SaaS">Observability / SaaS</option>
+            <option value="Security analytics">Security analytics</option>
+            <option value="Semiconductors">Semiconductors</option>
+            <option value="Quantum">Quantum</option>
+            <option value="AI / Voice">AI / Voice</option>
+            <option value="Consulting">Consulting</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="snap-form-row">
+        <label for="snapInNotes">Notes (optional)</label>
+        <textarea id="snapInNotes" placeholder="Thesis, target price, anything..."></textarea>
+      </div>
+      <div class="snap-form-error" id="snapFormError"></div>
+      <div class="snap-modal-actions">
+        <button type="button" class="snap-modal-btn" id="snapAddCancel">Cancel</button>
+        <button type="button" class="snap-modal-btn is-primary" id="snapAddSubmit">Add position</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -8709,10 +8711,14 @@
   })();
 
   // ============ DONUT (Allocation) ============
-  Chart.defaults.font.family = "'Instrument Sans', system-ui, sans-serif";
-  Chart.defaults.color = '#8b93ad';
+  // Guard against Chart.js failing to load (CDN outage, ad-blocker, offline) —
+  // a top-level throw here would otherwise halt every later IIFE in this file,
+  // including the snapshot tracker's event wiring.
+  try {
+    Chart.defaults.font.family = "'Instrument Sans', system-ui, sans-serif";
+    Chart.defaults.color = '#8b93ad';
 
-  const donutCtx = document.getElementById('donut').getContext('2d');
+    const donutCtx = document.getElementById('donut').getContext('2d');
   new Chart(donutCtx, {
     type: 'doughnut',
     data: {
@@ -8758,6 +8764,9 @@
       }
     }
   });
+  } catch (e) {
+    console.warn('Chart.js init failed (likely CDN blocked):', e.message);
+  }
 
   // ============ WATCHLIST PROJECTION CHARTS ============
   // Kept for back-compat with any embedded canvases; the new opportunity view
@@ -8864,7 +8873,7 @@
   // ============ HERO BG SPARKLINE ============
   (function () {
     const el = document.getElementById('heroBgSpark');
-    if (!el) return;
+    if (!el || typeof Chart === 'undefined') return;
     // Plausible 30-day series ending at $33,124.41 with mild upward drift
     const final = 33124.41;
     const start = 32420;
@@ -8908,7 +8917,7 @@
   // ============ SECTOR DONUT ============
   (function () {
     const el = document.getElementById('sectorDonut');
-    if (!el) return;
+    if (!el || typeof Chart === 'undefined') return;
     new Chart(el.getContext('2d'), {
       type: 'doughnut',
       data: {
@@ -9960,6 +9969,84 @@
 
     // Expose for debugging
     window.__dock = { render: render, computeRowData: computeRowData };
+  })();
+
+  // ===== Defensive fallback: Add Position modal =====
+  // Belt-and-suspenders wiring so the "+ Add position" and dock "+ Track as
+  // position" buttons always open the modal, even if some earlier init code
+  // failed or a browser extension swallowed an event. Runs once at DOM-ready,
+  // is idempotent, and only takes over when the primary wiring didn't.
+  (function () {
+    function ensureModalWired() {
+      var modal = document.getElementById('snapAddModal');
+      if (!modal) return; // nothing to wire to
+      // Already wired by primary IIFE? Bail.
+      if (modal.dataset.fallbackWired === '1') return;
+      modal.dataset.fallbackWired = '1';
+
+      function openModal() {
+        // Reset form fields if present (no-op if missing)
+        ['snapInTicker', 'snapInShares', 'snapInAvgCost', 'snapInNotes'].forEach(function (id) {
+          var el = document.getElementById(id); if (el) el.value = '';
+        });
+        var sector = document.getElementById('snapInSector');
+        if (sector) sector.value = 'Other';
+        var err = document.getElementById('snapFormError'); if (err) err.textContent = '';
+        modal.classList.add('is-open');
+        setTimeout(function () {
+          var t = document.getElementById('snapInTicker'); if (t) t.focus();
+        }, 50);
+      }
+      function closeModal() { modal.classList.remove('is-open'); }
+
+      // Expose globally if not already
+      if (typeof window.__openAddPosition !== 'function') {
+        window.__openAddPosition = openModal;
+      }
+
+      // Cancel button + Esc + backdrop click — these are safe to add even if
+      // the primary handler already exists; both will call closeAddModal/closeModal
+      // and the resulting double-close is a no-op.
+      var cancel = document.getElementById('snapAddCancel');
+      if (cancel) cancel.addEventListener('click', closeModal);
+      modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal.classList.contains('is-open')) closeModal();
+      });
+
+      // Single document-level click delegation that catches BOTH:
+      //   - the snapshot's "+ Add position" button (#snapAddBtn)
+      //   - the dock's "+ Add" button (#dockAddBtn)
+      //   - any dock-row "+ Track as position" button ([data-add-from-watch])
+      // We attach this even if other listeners exist — if the modal is already
+      // open, openModal is a no-op (idempotent reset). If a prefill ticker is
+      // present (track-as-position), we apply it after open.
+      document.addEventListener('click', function (e) {
+        var addBtn = e.target && e.target.closest && e.target.closest('#snapAddBtn, #dockAddBtn');
+        if (addBtn) {
+          // Only open if our primary handler hasn't already (modal not open yet)
+          if (!modal.classList.contains('is-open')) openModal();
+          return;
+        }
+        var fromWatch = e.target && e.target.closest && e.target.closest('[data-add-from-watch]');
+        if (fromWatch) {
+          var ticker = fromWatch.getAttribute('data-add-from-watch') || '';
+          if (!modal.classList.contains('is-open')) openModal();
+          setTimeout(function () {
+            var inp = document.getElementById('snapInTicker');
+            if (inp && ticker) inp.value = ticker.toUpperCase();
+            var sharesInp = document.getElementById('snapInShares');
+            if (sharesInp) sharesInp.focus();
+          }, 60);
+        }
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', ensureModalWired);
+    } else {
+      ensureModalWired();
+    }
   })();
 </script>
 
