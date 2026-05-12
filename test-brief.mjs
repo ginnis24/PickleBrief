@@ -1,18 +1,17 @@
-// Netlify Function: research-deleted
-// GET    /api/research-deleted    → { tickers: ["AMD", "MU", ...] }
-// POST   /api/research-deleted    → { action: "add"|"remove"|"clear", ticker? }
-// DELETE /api/research-deleted    → clears the list
+// Netlify Function: watchlist
+// GET    /api/watchlist           → { tickers: [{ticker, note, added}] }
+// POST   /api/watchlist           → { action: "add"|"remove"|"clear", ticker?, note? }
+// DELETE /api/watchlist           → clears the list
 //
-// Used by the dashboard to remember which research cards the user × dismissed,
-// so deletions sync across devices.
-//
-// Storage: Netlify Blobs (key "research-deleted" in store "picklebrief")
+// Storage: Netlify Blobs (key "watchlist" in store "picklebrief")
+// Limits:  max 50 tickers; ticker must match /^[A-Z.\-]{1,6}$/; note ≤ 120 chars
+// Auth:    none — sanity validation only (see README)
 
 import { getStore } from "@netlify/blobs";
 
 const STORE_NAME = "picklebrief";
-const KEY = "research-deleted";
-const MAX_TICKERS = 100;
+const KEY = "watchlist";
+const MAX_TICKERS = 50;
 const TICKER_RE = /^[A-Z.\-]{1,6}$/;
 
 const CORS = {
@@ -35,7 +34,7 @@ async function readList(store) {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((t) => TICKER_RE.test(t)) : [];
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
@@ -84,11 +83,16 @@ export default async (req) => {
         if (!TICKER_RE.test(ticker)) {
           return json({ error: "Invalid ticker" }, 400);
         }
-        if (list.indexOf(ticker) === -1) {
+        const note = String(body.note || "").slice(0, 120);
+        // Dedupe — update note if already present
+        const idx = list.findIndex((x) => x.ticker === ticker);
+        if (idx >= 0) {
+          list[idx].note = note;
+        } else {
           if (list.length >= MAX_TICKERS) {
             return json({ error: `Max ${MAX_TICKERS} tickers` }, 400);
           }
-          list.push(ticker);
+          list.unshift({ ticker, note, added: new Date().toISOString() });
         }
         await writeList(store, list);
         return json({ ok: true, tickers: list });
@@ -96,7 +100,11 @@ export default async (req) => {
 
       if (action === "remove") {
         const ticker = normalizeTicker(body.ticker);
-        const next = list.filter((t) => t !== ticker);
+        if (!TICKER_RE.test(ticker)) {
+          // Idempotent: a remove for an invalid ticker is a no-op, not an error
+          return json({ ok: true, tickers: list });
+        }
+        const next = list.filter((x) => x.ticker !== ticker);
         await writeList(store, next);
         return json({ ok: true, tickers: next });
       }
@@ -111,5 +119,5 @@ export default async (req) => {
 };
 
 export const config = {
-  path: "/api/research-deleted",
+  path: "/api/watchlist",
 };
