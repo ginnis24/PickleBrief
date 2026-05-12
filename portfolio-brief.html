@@ -112,7 +112,11 @@
     background: linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.4));
     border-right: 1px solid var(--hairline);
     overflow-y: auto;
+    /* Hide scrollbar visually — scroll still works for very short viewports */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
+  .sidebar::-webkit-scrollbar { width: 0; height: 0; display: none; }
   .sidebar .brand {
     padding: 4px 12px 0;
   }
@@ -3300,11 +3304,12 @@
   /* Responsive collapse: priority columns kept visible at all sizes.
      The main content area is squeezed by a 240px sidebar and (at ≥1200px) a
      340px right dock, so breakpoints are tuned to the resulting content width,
-     not the raw viewport. */
-  /* Columns kept on every breakpoint: Symbol, Last, Today%, Value, Quantity */
-  /* Below 1900px (~1240px main with dock): drop cost basis total, 52-week range visual */
+     not the raw viewport. The 52-week range is the signature visual of this
+     table and stays as long as possible. */
+  /* Columns kept on every breakpoint: Symbol, Last, Today%, Value, Quantity, 52-week range */
+  /* Below 1900px (~1240px main with dock): drop cost basis total */
   @media (max-width: 1899px) {
-    .snap-col-cb-total, .snap-col-52w { display: none; }
+    .snap-col-cb-total { display: none; }
   }
   /* Below 1620px (~960px main): drop today's $, total $ */
   @media (max-width: 1619px) {
@@ -3319,9 +3324,10 @@
     .snap-col-avg-cost { display: table-cell; }
     .snap-col-last-change { display: table-cell; }
   }
-  /* Below 1060px (no dock, narrow main): drop avg cost, % of account, last-price change */
+  /* Below 1060px (no dock, narrow main): drop the 52-week range too */
   @media (max-width: 1059px) {
     .snap-col-avg-cost, .snap-col-pct-account, .snap-col-last-change { display: none; }
+    .snap-col-52w { display: none; }
   }
   /* Below 600px (mobile): drop total% and compress padding */
   @media (max-width: 599px) {
@@ -6494,8 +6500,9 @@
       };
       ws.onclose = function () {
         state.wsState = 'error';
-        setConn('error', 'Disconnected — retrying');
         state.subscribed = {};
+        // Polling fallback covers the gap; show that state directly rather
+        // than flashing "Disconnected — retrying" first.
         startPolling();
         // Backoff reconnect
         var delay = Math.min(state.wsBackoffMs, 30000);
