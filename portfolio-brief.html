@@ -51,6 +51,8 @@
   *, *::before, *::after { box-sizing: border-box; }
 
   html, body { margin: 0; padding: 0; }
+  html { overflow-x: hidden; }
+  body { overflow-x: clip; }
 
   body {
     font-family: var(--font-body);
@@ -1991,9 +1993,9 @@
     padding: 22px 24px;
     margin-top: 18px;
     display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 24px;
-    align-items: center;
+    grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+    gap: 32px;
+    align-items: start;
   }
   .rebalance-text { min-width: 0; }
   .rebalance-text p {
@@ -2005,22 +2007,23 @@
   .rebalance-text strong { color: var(--ink); }
   .rebalance-actions {
     display: flex; flex-direction: column; gap: 8px;
-    flex-shrink: 0;
+    min-width: 0;
   }
   .reb-action {
-    display: inline-flex;
+    display: flex;
     align-items: center; gap: 8px;
-    padding: 8px 14px;
+    padding: 9px 14px;
     background: rgba(0,0,0,0.2);
     color: var(--ink);
     border: 1px solid var(--gold-line);
     border-radius: 6px;
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 10.5px;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.1em;
     text-decoration: none;
-    white-space: nowrap;
+    line-height: 1.4;
+    word-break: break-word;
   }
   body[data-theme="light"] .reb-action { background: rgba(255,255,255,0.6); }
   .reb-action.sell { color: var(--down); border-color: rgba(248,122,141,0.5); }
@@ -3294,21 +3297,33 @@
     .tracker-hero-sub { font-size: 12.5px; }
   }
 
-  /* Responsive collapse: priority columns kept visible at all sizes */
+  /* Responsive collapse: priority columns kept visible at all sizes.
+     The main content area is squeezed by a 240px sidebar and (at ≥1200px) a
+     340px right dock, so breakpoints are tuned to the resulting content width,
+     not the raw viewport. */
   /* Columns kept on every breakpoint: Symbol, Last, Today%, Value, Quantity */
-  /* Below 1200px: drop cost basis total, 52-week range visual */
-  @media (max-width: 1199px) {
+  /* Below 1900px (~1240px main with dock): drop cost basis total, 52-week range visual */
+  @media (max-width: 1899px) {
     .snap-col-cb-total, .snap-col-52w { display: none; }
   }
-  /* Below 980px: drop today's $, total $ */
-  @media (max-width: 979px) {
+  /* Below 1620px (~960px main): drop today's $, total $ */
+  @media (max-width: 1619px) {
     .snap-col-today-dollar, .snap-col-total-dollar { display: none; }
   }
-  /* Below 760px: drop avg cost, % of account, last-price change */
-  @media (max-width: 759px) {
+  /* Below 1400px (~740px main, still has dock): drop avg cost, % of account, last-price change */
+  @media (max-width: 1399px) {
     .snap-col-avg-cost, .snap-col-pct-account, .snap-col-last-change { display: none; }
   }
-  /* Below 600px: compress padding, drop total% */
+  /* Below 1200px (dock hidden, main reclaims 340px): re-allow more columns */
+  @media (max-width: 1199px) and (min-width: 1060px) {
+    .snap-col-avg-cost { display: table-cell; }
+    .snap-col-last-change { display: table-cell; }
+  }
+  /* Below 1060px (no dock, narrow main): drop avg cost, % of account, last-price change */
+  @media (max-width: 1059px) {
+    .snap-col-avg-cost, .snap-col-pct-account, .snap-col-last-change { display: none; }
+  }
+  /* Below 600px (mobile): drop total% and compress padding */
   @media (max-width: 599px) {
     .snap-col-total-pct { display: none; }
     .snapshot-table { font-size: 11px; }
@@ -6998,6 +7013,15 @@
       modal.addEventListener('click', function (e) { if (e.target === modal) closeAddModal(); });
       document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && modal.classList.contains('is-open')) closeAddModal();
+      });
+      // Defensive: also catch clicks via delegation, in case the direct listener
+      // is shadowed or the button is re-rendered. Idempotent — openAddModal
+      // resets the form fields every time.
+      document.addEventListener('click', function (e) {
+        var t = e.target;
+        if (!t) return;
+        var btn = t.closest && t.closest('#snapAddBtn, #dockAddBtn');
+        if (btn) openAddModal();
       });
       // Enter in any input submits
       ['snapInTicker', 'snapInShares', 'snapInAvgCost'].forEach(function (id) {
