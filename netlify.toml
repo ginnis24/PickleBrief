@@ -1,0 +1,20 @@
+# Netlify build/runtime config for picklebrief
+#
+# - Serves the dashboard from /portfolio-brief.html (and the root redirect below)
+# - Two functions under /api/* defined via in-file `export const config` paths
+
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+# Root → dashboard
+[[redirects]]
+  from = "/"
+  to = "/portfolio-brief.html"
+  status = 200
+
+# Optional: friendly alias
+[[redirects]]
+  from = "/dashboard"
+  to = "/portfolio-brief.html"
+  status = 200
