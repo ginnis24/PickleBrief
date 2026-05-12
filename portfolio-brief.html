@@ -2551,6 +2551,300 @@
   }
   .notes-saved.show { opacity: 0.7; }
 
+  /* ============ OPPORTUNITY SINGLE VIEW ============ */
+  /* Mirrors the structure of .hsv-* (holding single view) but distinct
+     classes so we can evolve them independently. */
+  .opportunities-single-view {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    margin-top: 16px;
+  }
+  body[data-theme="light"] .opportunities-single-view {
+    background: var(--panel);
+    border-color: var(--border);
+  }
+  .opportunities-single-view[hidden] { display: none; }
+  .osv-empty {
+    color: var(--ink-muted);
+    font-size: 14px;
+    text-align: center;
+    padding: 48px 16px;
+  }
+  .osv-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+  .osv-title { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .osv-ticker {
+    font-family: var(--font-display);
+    font-size: 32px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--gold);
+  }
+  .osv-name {
+    color: var(--ink-muted);
+    font-size: 13px;
+  }
+  .osv-rating {
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .osv-rating.strong-buy { background: rgba(124,224,168,0.2); color: var(--up); }
+  .osv-rating.buy        { background: rgba(124,224,168,0.12); color: var(--up); }
+  .osv-rating.hold       { background: rgba(243,201,105,0.16); color: var(--hold); }
+  .osv-rating.sell       { background: rgba(248,122,141,0.16); color: var(--down); }
+  .osv-rating.na         { background: rgba(232,226,207,0.06); color: var(--ink-muted); }
+
+  .osv-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .osv-price {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .osv-upside {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--up);
+  }
+  .osv-upside.down { color: var(--down); }
+
+  .osv-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 16px;
+    padding: 16px 0;
+    margin-bottom: 16px;
+    border-top: 1px solid var(--border-soft);
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .osv-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .osv-stat-label {
+    color: var(--ink-muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+  .osv-stat-value {
+    font-family: var(--font-display);
+    font-size: 18px;
+    color: var(--ink);
+  }
+  .osv-stat-value.up { color: var(--up); }
+  .osv-stat-value.down { color: var(--down); }
+  .osv-stat-sub {
+    color: var(--ink-muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    margin-top: 2px;
+  }
+
+  .osv-methodology {
+    color: var(--ink-muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .osv-methodology .osv-method-source {
+    color: var(--gold);
+  }
+  .osv-methodology .osv-method-warn {
+    color: var(--down);
+  }
+
+  .osv-chart {
+    height: 360px;
+    margin-bottom: 20px;
+    background: var(--panel-2);
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  body[data-theme="light"] .osv-chart { background: var(--bg); }
+
+  .osv-risks {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 12px 14px;
+    background: rgba(248, 122, 141, 0.08);
+    border: 1px solid rgba(248, 122, 141, 0.3);
+    border-left: 3px solid var(--down);
+    border-radius: 4px;
+    margin-bottom: 20px;
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .osv-risks-icon {
+    color: var(--down);
+    font-size: 16px;
+    flex: 0 0 auto;
+    line-height: 1.2;
+  }
+  .osv-risks-label {
+    display: block;
+    color: var(--down);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .osv-section {
+    margin-bottom: 20px;
+  }
+  .osv-section h3 {
+    color: var(--gold);
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .osv-thesis {
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .osv-cases {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 720px) {
+    .osv-cases { grid-template-columns: 1fr; }
+  }
+  .osv-case {
+    padding: 12px 14px;
+    border-radius: 4px;
+    background: var(--panel-2);
+    border: 1px solid var(--border-soft);
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+  .osv-case.bull { border-left: 3px solid var(--up); }
+  .osv-case.bear { border-left: 3px solid var(--down); }
+  .osv-case-label {
+    display: block;
+    color: var(--ink-muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .osv-case.bull .osv-case-label { color: var(--up); }
+  .osv-case.bear .osv-case-label { color: var(--down); }
+
+  .osv-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 720px) {
+    .osv-cols { grid-template-columns: 1fr; }
+  }
+
+  .osv-kv {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .osv-kv li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--border-soft);
+  }
+  .osv-kv li:last-child { border-bottom: 0; }
+  .osv-kv .label {
+    color: var(--ink-muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+  .osv-kv .value {
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    text-align: right;
+  }
+  .osv-kv .value.up { color: var(--up); }
+  .osv-kv .value.down { color: var(--down); }
+
+  .osv-actions {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .osv-action {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 10px;
+    align-items: baseline;
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--border-soft);
+    font-size: 12px;
+  }
+  .osv-action:last-child { border-bottom: 0; }
+  .osv-action-firm {
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-weight: 600;
+  }
+  .osv-action-detail {
+    color: var(--ink-muted);
+    font-size: 11px;
+  }
+  .osv-action-detail .target { color: var(--ink); font-family: var(--font-mono); }
+  .osv-action-detail .target.up { color: var(--up); }
+  .osv-action-detail .target.down { color: var(--down); }
+  .osv-action-date {
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
   /* ============ NEWS VIEW ============ */
   .news-feed {
     display: flex;
@@ -3997,12 +4291,18 @@
         <span class="nav-letter">C</span>
         <span class="nav-label">Calendar</span>
       </button>
-      <button class="nav-item" role="tab" data-view="opportunities">
-        <span class="nav-bar"></span>
-        <span class="nav-letter">O</span>
-        <span class="nav-label">Opportunities</span>
-        <span class="nav-count">5</span>
-      </button>
+      <div class="nav-group" data-group="opportunities">
+        <button class="nav-item nav-item-with-dropdown" role="tab" data-view="opportunities" aria-expanded="false">
+          <span class="nav-bar"></span>
+          <span class="nav-letter">O</span>
+          <span class="nav-label">Opportunities</span>
+          <span class="nav-count">5</span>
+          <span class="nav-chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="nav-dropdown" id="opportunitiesDropdown">
+          <!-- Populated by renderOpportunitiesDropdown() from briefData -->
+        </div>
+      </div>
       <button class="nav-item" role="tab" data-view="research">
         <span class="nav-bar"></span>
         <span class="nav-letter">R</span>
@@ -4679,108 +4979,8 @@
       <h2 class="section-title">Vetted <em>opportunities</em></h2>
       <span class="section-sub">Tech · 50%+ projected upside · 30–90 days · researched in prior briefs</span>
     </div>
-    <div class="watchlist-grid">
-
-      <div class="watch">
-        <div class="watch-header">
-          <div>
-            <div class="watch-ticker">IONQ</div>
-            <div class="watch-name">IonQ, Inc. · Quantum</div>
-          </div>
-          <div>
-            <div class="watch-upside">+65%</div>
-            <div class="watch-upside-label">90-day target</div>
-          </div>
-        </div>
-        <div class="watch-prices">
-          <div><span class="lab">Current</span><span class="val">$12.40</span></div>
-          <div><span class="lab">Target</span><span class="val target">$20.50</span></div>
-          <div><span class="lab">Earnings</span><span class="val earnings">May 14</span></div>
-        </div>
-        <div class="watch-chart"><canvas id="watchIONQ"></canvas></div>
-        <p class="watch-thesis"><strong>Catalyst</strong>Direct peer to your QBTS/RGTI exposure but with stronger commercial cloud partnerships. System delivery announcement next week is the breakout trigger.</p>
-      </div>
-
-      <div class="watch">
-        <div class="watch-header">
-          <div>
-            <div class="watch-ticker">PLTR</div>
-            <div class="watch-name">Palantir Technologies · AI/Data</div>
-          </div>
-          <div>
-            <div class="watch-upside">+52%</div>
-            <div class="watch-upside-label">60-day target</div>
-          </div>
-        </div>
-        <div class="watch-prices">
-          <div><span class="lab">Current</span><span class="val">$21.50</span></div>
-          <div><span class="lab">Target</span><span class="val target">$32.80</span></div>
-          <div><span class="lab">Earnings</span><span class="val earnings">Aug 4</span></div>
-        </div>
-        <div class="watch-chart"><canvas id="watchPLTR"></canvas></div>
-        <p class="watch-thesis"><strong>Catalyst</strong>AIP bootcamps converting to commercial contracts at record pace, diversifying away from sole government reliance.</p>
-      </div>
-
-      <div class="watch">
-        <div class="watch-header">
-          <div>
-            <div class="watch-ticker">SNOW</div>
-            <div class="watch-name">Snowflake, Inc. · Data Cloud</div>
-          </div>
-          <div>
-            <div class="watch-upside">+55%</div>
-            <div class="watch-upside-label">90-day target</div>
-          </div>
-        </div>
-        <div class="watch-prices">
-          <div><span class="lab">Current</span><span class="val">$154.74</span></div>
-          <div><span class="lab">Target</span><span class="val target">$240.00</span></div>
-          <div><span class="lab">Earnings</span><span class="val earnings">Aug 27</span></div>
-        </div>
-        <div class="watch-chart"><canvas id="watchSNOW"></canvas></div>
-        <p class="watch-thesis"><strong>Catalyst</strong>Consumption metrics stabilizing. Native LLM integration tools should drive a consumption spike in H2.</p>
-      </div>
-
-      <div class="watch">
-        <div class="watch-header">
-          <div>
-            <div class="watch-ticker">U</div>
-            <div class="watch-name">Unity Software · 3D/AR</div>
-          </div>
-          <div>
-            <div class="watch-upside">+70%</div>
-            <div class="watch-upside-label">90-day target</div>
-          </div>
-        </div>
-        <div class="watch-prices">
-          <div><span class="lab">Current</span><span class="val">$28.10</span></div>
-          <div><span class="lab">Target</span><span class="val target">$48.00</span></div>
-          <div><span class="lab">Earnings</span><span class="val earnings">Aug 11</span></div>
-        </div>
-        <div class="watch-chart"><canvas id="watchU"></canvas></div>
-        <p class="watch-thesis"><strong>Catalyst</strong>Post-restructuring, AI-assisted 3D generation tools regaining developer trust and enterprise AR/VR contracts.</p>
-      </div>
-
-      <div class="watch">
-        <div class="watch-header">
-          <div>
-            <div class="watch-ticker">ARM</div>
-            <div class="watch-name">Arm Holdings · Semis</div>
-          </div>
-          <div>
-            <div class="watch-upside">+50%</div>
-            <div class="watch-upside-label">60-day target</div>
-          </div>
-        </div>
-        <div class="watch-prices">
-          <div><span class="lab">Current</span><span class="val">$110.20</span></div>
-          <div><span class="lab">Target</span><span class="val target">$165.00</span></div>
-          <div><span class="lab">Earnings</span><span class="val earnings">Aug 5</span></div>
-        </div>
-        <div class="watch-chart"><canvas id="watchARM"></canvas></div>
-        <p class="watch-thesis"><strong>Catalyst</strong>Edge AI shifting compute back to mobile/efficient architectures. V9 adoption is crushing consensus.</p>
-      </div>
-
+    <div class="opportunities-single-view" id="opportunitiesSingleView">
+      <div class="osv-empty">Select an opportunity from the sidebar to see its full write-up.</div>
     </div>
   </section>
 
@@ -7278,27 +7478,281 @@
     }).join('');
   }
 
+  // ===== Opportunities =====
+  // New layout: opportunities expand in the sidebar nav like holdings. Clicking
+  // a sidebar sub-item shows that single opportunity in the main area with a
+  // full write-up (TradingView chart, thesis, bull/bear cases, material risks,
+  // key metrics, analyst actions, news). The old static 5-card grid is gone.
   function renderOpportunities(opps) {
-    var grid = document.querySelector('.watchlist-grid');
-    if (!grid || !opps) return;
-    grid.innerHTML = opps.map(function (o) {
-      return '<div class="watch">' +
-        '<div class="watch-header">' +
-          '<div>' +
-            '<span class="watch-ticker"><a href="' + escapeHtml(o.yahoo_url || ('https://finance.yahoo.com/quote/' + o.ticker)) + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">' + escapeHtml(o.ticker) + '</a></span>' +
-            '<span class="watch-name">' + escapeHtml(o.name) + '</span>' +
-          '</div>' +
-          '<span class="watch-upside up">+' + o.upside_pct + '% · ' + o.horizon_days + 'd</span>' +
-        '</div>' +
-        '<div class="watch-prices">' +
-          '<div><span class="lab">Current</span><span class="val">$' + o.current_price.toFixed(2) + '</span></div>' +
-          '<div><span class="lab">Target</span><span class="val target">$' + o.target_price.toFixed(2) + '</span></div>' +
-          '<div><span class="lab">Earnings</span><span class="val earnings">' + escapeHtml(o.earnings_label || '') + '</span></div>' +
-        '</div>' +
-        '<div class="watch-chart"><canvas id="watch' + escapeHtml(o.ticker) + '"></canvas></div>' +
-        '<div class="watch-catalyst">' + escapeHtml(o.catalyst || '') + '</div>' +
-      '</div>';
+    renderOpportunitiesDropdown(opps);
+    // Restore last-selected opportunity (or default to first available).
+    var saved = '';
+    try { saved = localStorage.getItem('pb-selectedOpportunity') || ''; } catch (_) {}
+    var available = (opps || []).map(function (o) { return o.ticker; });
+    if (!saved || available.indexOf(saved) < 0) saved = available[0] || '';
+    if (saved) showOpportunityView(saved);
+  }
+
+  function renderOpportunitiesDropdown(opps) {
+    var dd = document.getElementById('opportunitiesDropdown');
+    if (!dd) return;
+    var list = opps || [];
+    if (!list.length) {
+      dd.innerHTML = '';
+      var cnt0 = document.querySelector('.nav-item-with-dropdown[data-view="opportunities"] .nav-count');
+      if (cnt0) cnt0.textContent = '0';
+      return;
+    }
+    var active = window.__selectedOpportunity || (list[0] && list[0].ticker) || '';
+    dd.innerHTML = list.map(function (o) {
+      var meta = (o.upside_pct != null) ? ('+' + Number(o.upside_pct).toFixed(0) + '%') : '';
+      return '<button type="button" class="nav-sub" data-opp-ticker="' + escapeHtml(o.ticker) + '">' +
+        '<span class="ns-ticker">' + escapeHtml(o.ticker) + '</span>' +
+        (meta ? '<span class="ns-meta">' + escapeHtml(meta) + '</span>' : '') +
+      '</button>';
     }).join('');
+    dd.querySelectorAll('.nav-sub').forEach(function (b) {
+      b.classList.toggle('active', (b.dataset.oppTicker || '') === active);
+    });
+    var cnt = document.querySelector('.nav-item-with-dropdown[data-view="opportunities"] .nav-count');
+    if (cnt) cnt.textContent = list.length;
+  }
+
+  // Render one opportunity's full write-up into the single-view container.
+  // Tolerates missing fields — a thin brief still renders, just with empty
+  // sections omitted. Required: ticker. Everything else is optional.
+  window.showOpportunityView = function (ticker) {
+    var single = document.getElementById('opportunitiesSingleView');
+    var dd = document.getElementById('opportunitiesDropdown');
+    if (!single) return;
+
+    var d = window.briefData || {};
+    var opps = d.opportunities || [];
+    var available = opps.map(function (o) { return o.ticker; });
+    if (!ticker || available.indexOf(ticker) < 0) ticker = available[0] || '';
+    if (!ticker) {
+      single.innerHTML = '<div class="osv-empty">No opportunities in this brief.</div>';
+      return;
+    }
+
+    window.__selectedOpportunity = ticker;
+    try { localStorage.setItem('pb-selectedOpportunity', ticker); } catch (_) {}
+
+    if (dd) {
+      dd.querySelectorAll('.nav-sub').forEach(function (b) {
+        b.classList.toggle('active', (b.dataset.oppTicker || '') === ticker);
+      });
+    }
+
+    var o = opps.find(function (x) { return x.ticker === ticker; });
+    if (!o) {
+      single.innerHTML = '<div class="osv-empty">Opportunity ' + escapeHtml(ticker) + ' not found in this brief.</div>';
+      return;
+    }
+
+    single.innerHTML = renderSingleOpportunity(o);
+    var chartHost = single.querySelector('#osvAdvancedChart');
+    if (chartHost && o.tv_symbol) mountAdvancedChart(chartHost, o.tv_symbol);
+  };
+
+  function renderSingleOpportunity(o) {
+    if (!o) return '';
+
+    function fmtMoney(n) {
+      if (n == null || isNaN(n)) return '—';
+      return '$' + Number(n).toFixed(2);
+    }
+    function fmtPct(n, withSign) {
+      if (n == null || isNaN(n)) return '—';
+      var num = Number(n);
+      var sign = (withSign && num > 0) ? '+' : '';
+      return sign + num.toFixed(0) + '%';
+    }
+    function newsUrl(n, ticker) {
+      if (n && n.url && n.url.length > 1) return n.url;
+      return 'https://finance.yahoo.com/quote/' + encodeURIComponent(ticker) + '/news';
+    }
+
+    var ticker = escapeHtml(o.ticker);
+    var name = escapeHtml(o.name || '');
+    var sector = o.sector ? ' · ' + escapeHtml(o.sector) : '';
+    var yahoo = escapeHtml(o.yahoo_url || ('https://finance.yahoo.com/quote/' + o.ticker));
+
+    // Consensus rating badge
+    var ratingRaw = (o.consensus_rating || '').trim();
+    var ratingClass = ratingRaw.toLowerCase().replace(/\s+/g, '-') || 'na';
+    var ratingBadge = ratingRaw
+      ? '<span class="osv-rating ' + escapeHtml(ratingClass) + '">' + escapeHtml(ratingRaw) + '</span>'
+      : '';
+
+    // Upside class
+    var upsideClass = (o.upside_pct != null && Number(o.upside_pct) < 0) ? 'down' : 'up';
+    var upsideStr = (o.upside_pct != null)
+      ? (Number(o.upside_pct) > 0 ? '+' : '') + Number(o.upside_pct).toFixed(0) + '%'
+      : '—';
+
+    // Target methodology line
+    var methodLabel = '';
+    if (o.target_source) {
+      var srcMap = {
+        consensus_analyst: 'Consensus analyst target',
+        morningstar_fair_value: 'Morningstar fair value',
+        single_analyst_high: 'Single analyst (bullish)',
+        none: 'No reliable target'
+      };
+      var src = srcMap[o.target_source] || escapeHtml(o.target_source);
+      var parts = ['<span class="osv-method-source">' + escapeHtml(src) + '</span>'];
+      if (o.target_analyst_count) parts.push(escapeHtml(o.target_analyst_count) + ' analysts');
+      if (o.target_revision_90d_pct != null) {
+        var rev = Number(o.target_revision_90d_pct);
+        var warn = rev <= -20;
+        var revStr = (rev > 0 ? '+' : '') + rev.toFixed(0) + '%';
+        parts.push('<span class="' + (warn ? 'osv-method-warn' : '') + '">90d revision ' + revStr + '</span>');
+      }
+      methodLabel = '<div class="osv-methodology">' + parts.join(' &nbsp;·&nbsp; ') + '</div>';
+    }
+
+    // Stats grid
+    var statsParts = [];
+    statsParts.push('<div class="osv-stat"><div class="osv-stat-label">Current</div><div class="osv-stat-value">' + fmtMoney(o.current_price) + '</div></div>');
+    statsParts.push('<div class="osv-stat"><div class="osv-stat-label">Target</div><div class="osv-stat-value">' + fmtMoney(o.target_price) + '</div>' +
+      (o.target_high || o.target_low ? '<div class="osv-stat-sub">range ' + fmtMoney(o.target_low) + '–' + fmtMoney(o.target_high) + '</div>' : '') +
+      '</div>');
+    statsParts.push('<div class="osv-stat"><div class="osv-stat-label">Upside</div><div class="osv-stat-value ' + upsideClass + '">' + escapeHtml(upsideStr) + '</div></div>');
+    if (o.target_analyst_count) {
+      statsParts.push('<div class="osv-stat"><div class="osv-stat-label">Coverage</div><div class="osv-stat-value">' + escapeHtml(String(o.target_analyst_count)) + '</div><div class="osv-stat-sub">analysts</div></div>');
+    }
+    if (o.key_metrics && o.key_metrics.ytd_pct != null) {
+      var ytd = Number(o.key_metrics.ytd_pct);
+      var ytdClass = ytd >= 0 ? 'up' : 'down';
+      statsParts.push('<div class="osv-stat"><div class="osv-stat-label">YTD</div><div class="osv-stat-value ' + ytdClass + '">' + (ytd > 0 ? '+' : '') + ytd.toFixed(0) + '%</div></div>');
+    }
+    var statsHtml = '<div class="osv-stats">' + statsParts.join('') + '</div>';
+
+    // Material risks callout
+    var risksHtml = '';
+    if (o.material_risks && String(o.material_risks).trim().length) {
+      risksHtml =
+        '<div class="osv-risks">' +
+          '<span class="osv-risks-icon">⚠</span>' +
+          '<div><span class="osv-risks-label">Material risks</span>' + escapeHtml(o.material_risks) + '</div>' +
+        '</div>';
+    }
+
+    // Thesis
+    var thesisHtml = o.thesis
+      ? '<div class="osv-section"><h3>Thesis</h3><p class="osv-thesis">' + escapeHtml(o.thesis) + '</p></div>'
+      : '';
+
+    // Bull / bear cases
+    var casesHtml = '';
+    if (o.bull_case || o.bear_case) {
+      casesHtml = '<div class="osv-cases">';
+      if (o.bull_case) casesHtml += '<div class="osv-case bull"><span class="osv-case-label">Bull case</span>' + escapeHtml(o.bull_case) + '</div>';
+      if (o.bear_case) casesHtml += '<div class="osv-case bear"><span class="osv-case-label">Bear case</span>' + escapeHtml(o.bear_case) + '</div>';
+      casesHtml += '</div>';
+    }
+
+    // Key metrics column
+    var km = o.key_metrics || {};
+    var kmItems = [];
+    if (km.revenue_growth_yoy) {
+      var rg = String(km.revenue_growth_yoy);
+      var rgClass = rg.indexOf('-') === 0 ? 'down' : (rg.indexOf('+') === 0 ? 'up' : '');
+      kmItems.push('<li><span class="label">Revenue (YoY)</span><span class="value ' + rgClass + '">' + escapeHtml(rg) + '</span></li>');
+    }
+    if (km.profitability) kmItems.push('<li><span class="label">Profitability</span><span class="value">' + escapeHtml(km.profitability) + '</span></li>');
+    if (km.high52 != null || km.low52 != null) {
+      kmItems.push('<li><span class="label">52-week range</span><span class="value">' + fmtMoney(km.low52) + ' – ' + fmtMoney(km.high52) + '</span></li>');
+    }
+    var keyMetricsHtml = kmItems.length
+      ? '<div class="osv-section"><h3>Key metrics</h3><ul class="osv-kv">' + kmItems.join('') + '</ul></div>'
+      : '';
+
+    // Key dates column
+    var dateItems = [];
+    if (o.next_catalyst && o.next_catalyst.label) {
+      var label = o.next_catalyst.label;
+      var date = o.next_catalyst.date_iso || '';
+      var days = '';
+      if (date) {
+        var d = new Date(date + 'T00:00:00Z');
+        var now = new Date();
+        var diff = Math.round((d - now) / 86400000);
+        days = isFinite(diff) ? ' (' + (diff >= 0 ? 'in ' + diff + 'd' : Math.abs(diff) + 'd ago') + ')' : '';
+      }
+      dateItems.push('<li><span class="label">Next catalyst</span><span class="value">' + escapeHtml(label) + (date ? ' · ' + escapeHtml(date) : '') + escapeHtml(days) + '</span></li>');
+    }
+    if (o.earnings_date_iso) {
+      var ed = new Date(o.earnings_date_iso + 'T00:00:00Z');
+      var nowE = new Date();
+      var diffE = Math.round((ed - nowE) / 86400000);
+      var edDays = isFinite(diffE) ? ' (' + (diffE >= 0 ? 'in ' + diffE + 'd' : Math.abs(diffE) + 'd ago') + ')' : '';
+      dateItems.push('<li><span class="label">Earnings</span><span class="value">' + escapeHtml(o.earnings_date_iso) + escapeHtml(edDays) + '</span></li>');
+    }
+    var keyDatesHtml = dateItems.length
+      ? '<div class="osv-section"><h3>Key dates</h3><ul class="osv-kv">' + dateItems.join('') + '</ul></div>'
+      : '';
+
+    // Two-column block for metrics + dates
+    var colsHtml = (keyMetricsHtml || keyDatesHtml)
+      ? '<div class="osv-cols">' + keyMetricsHtml + keyDatesHtml + '</div>'
+      : '';
+
+    // Recent analyst actions
+    var actionsHtml = '';
+    if (Array.isArray(o.recent_actions) && o.recent_actions.length) {
+      var rows = o.recent_actions.map(function (a) {
+        var prior = (a.prior_target != null) ? ' from ' + fmtMoney(a.prior_target) : '';
+        var moveDir = '';
+        if (a.target != null && a.prior_target != null) {
+          moveDir = Number(a.target) > Number(a.prior_target) ? 'up' : (Number(a.target) < Number(a.prior_target) ? 'down' : '');
+        }
+        var detail = [a.action, a.rating].filter(Boolean).map(escapeHtml).join(' · ');
+        var tgt = (a.target != null) ? ' to <span class="target ' + moveDir + '">' + escapeHtml(fmtMoney(a.target)) + '</span>' + escapeHtml(prior) : '';
+        return '<li class="osv-action">' +
+          '<span class="osv-action-firm">' + escapeHtml(a.firm || '') + '</span>' +
+          '<span class="osv-action-detail">' + detail + tgt + '</span>' +
+          '<span class="osv-action-date">' + escapeHtml(a.date_iso || '') + '</span>' +
+        '</li>';
+      }).join('');
+      actionsHtml = '<div class="osv-section"><h3>Recent analyst actions</h3><ul class="osv-actions">' + rows + '</ul></div>';
+    }
+
+    // News
+    var newsHtml = '';
+    if (Array.isArray(o.news) && o.news.length) {
+      var items = o.news.map(function (n) {
+        return '<li class="news-item">' +
+          '<div class="news-source">' + escapeHtml(n.source || '') + (n.date ? ' · ' + escapeHtml(n.date) : '') + '</div>' +
+          '<a href="' + escapeHtml(newsUrl(n, o.ticker)) + '" target="_blank" rel="noopener">' + escapeHtml(n.headline || '') + '</a>' +
+          (n.take ? '<div class="news-take">' + escapeHtml(n.take) + '</div>' : '') +
+        '</li>';
+      }).join('');
+      newsHtml = '<div class="osv-section"><h3>Recent news</h3><ul class="news-list">' + items + '</ul></div>';
+    }
+
+    return '' +
+      '<div class="osv-header">' +
+        '<div class="osv-title">' +
+          '<span class="osv-ticker"><a href="' + yahoo + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">' + ticker + '</a></span>' +
+          '<span class="osv-name">' + name + sector + '</span>' +
+        '</div>' +
+        ratingBadge +
+      '</div>' +
+      '<div class="osv-price-row">' +
+        '<span class="osv-price">' + fmtMoney(o.current_price) + '</span>' +
+        '<span class="osv-upside ' + upsideClass + '">' + escapeHtml(upsideStr) + ' upside · target ' + fmtMoney(o.target_price) + '</span>' +
+      '</div>' +
+      methodLabel +
+      statsHtml +
+      '<div class="osv-chart" id="osvAdvancedChart" data-tv-symbol="' + escapeHtml(o.tv_symbol || '') + '"></div>' +
+      risksHtml +
+      thesisHtml +
+      casesHtml +
+      colsHtml +
+      actionsHtml +
+      newsHtml;
   }
 
   // ===== Research =====
@@ -7955,65 +8409,87 @@
     if (chartHost && h.tv_symbol) mountAdvancedChart(chartHost, h.tv_symbol);
   };
 
-  // ===== Sidebar Holdings dropdown — click + expand/collapse =====
+  // ===== Sidebar dropdown groups (Holdings + Opportunities) — click + expand/collapse =====
+  // Both nav groups share the same DOM pattern (nav-item-with-dropdown + nav-dropdown
+  // containing .nav-sub buttons). This block wires up both with one set of handlers,
+  // disambiguating by the `data-group` attribute on the wrapper.
   (function () {
-    function setExpanded(expanded) {
-      var grp = document.querySelector('.nav-group[data-group="holdings"]');
+    var GROUPS = ['holdings', 'opportunities'];
+
+    function setExpanded(group, expanded) {
+      var grp = document.querySelector('.nav-group[data-group="' + group + '"]');
       var btn = grp && grp.querySelector('.nav-item-with-dropdown');
       if (!grp || !btn) return;
       grp.dataset.expanded = expanded ? 'true' : 'false';
       btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
     }
-    // Auto-expand whenever Holdings becomes the active view
+    // Auto-expand whichever group is the active view; collapse the rest
     function syncExpandedToActive() {
-      var btn = document.querySelector('.nav-item[data-view="holdings"]');
-      var isActive = btn && btn.classList.contains('active');
-      setExpanded(!!isActive);
+      GROUPS.forEach(function (g) {
+        var btn = document.querySelector('.nav-item[data-view="' + g + '"]');
+        var isActive = btn && btn.classList.contains('active');
+        setExpanded(g, !!isActive);
+      });
     }
-    // Listen for view switches via the existing tab system
+    // Determine which group a sub-item belongs to
+    function groupForSub(sub) {
+      var dd = sub.closest && sub.closest('.nav-dropdown');
+      if (!dd) return null;
+      var grp = dd.closest && dd.closest('.nav-group');
+      return grp && grp.dataset.group || null;
+    }
+
     document.addEventListener('click', function (e) {
-      // Sub-item click: select that ticker (and switch to holdings view if not there)
+      // Sub-item click: route to the correct view + selection handler
       var sub = e.target.closest && e.target.closest('.nav-dropdown .nav-sub');
       if (sub) {
         e.preventDefault(); e.stopPropagation();
-        var ticker = sub.dataset.ticker || '';
-        var holdingsBtn = document.querySelector('.nav-item[data-view="holdings"]');
-        if (holdingsBtn && !holdingsBtn.classList.contains('active')) {
-          holdingsBtn.click();
+        var group = groupForSub(sub);
+        if (group === 'holdings') {
+          var ticker = sub.dataset.ticker || '';
+          var holdingsBtn = document.querySelector('.nav-item[data-view="holdings"]');
+          if (holdingsBtn && !holdingsBtn.classList.contains('active')) holdingsBtn.click();
+          if (window.showHoldingView) window.showHoldingView(ticker);
+          setExpanded('holdings', true);
+        } else if (group === 'opportunities') {
+          var oppTicker = sub.dataset.oppTicker || '';
+          var oppsBtn = document.querySelector('.nav-item[data-view="opportunities"]');
+          if (oppsBtn && !oppsBtn.classList.contains('active')) oppsBtn.click();
+          if (window.showOpportunityView) window.showOpportunityView(oppTicker);
+          setExpanded('opportunities', true);
         }
-        if (window.showHoldingView) window.showHoldingView(ticker);
-        setExpanded(true);
         return;
       }
-      // Mobile-strip click — same behavior, just no expand toggle
+      // Holdings mobile-strip click — same behavior, just no expand toggle
       var hms = e.target.closest && e.target.closest('.holdings-mobile-strip .hms-item');
       if (hms) {
         e.preventDefault(); e.stopPropagation();
         if (window.showHoldingView) window.showHoldingView(hms.dataset.ticker || '');
         return;
       }
-      // Chevron-only click toggles expand without view switch
+      // Chevron-only click toggles expand on its own group without switching views
       var chev = e.target.closest && e.target.closest('.nav-chevron');
       if (chev) {
         e.preventDefault(); e.stopPropagation();
-        var grp = document.querySelector('.nav-group[data-group="holdings"]');
-        var open = grp && grp.dataset.expanded === 'true';
-        setExpanded(!open);
+        var grp = chev.closest('.nav-group');
+        var grpName = grp && grp.dataset.group;
+        if (!grpName) return;
+        var open = grp.dataset.expanded === 'true';
+        setExpanded(grpName, !open);
         return;
       }
-      // Holdings nav-item click (anywhere except chevron): expand & let tab system handle navigation
-      var navItem = e.target.closest && e.target.closest('.nav-item-with-dropdown[data-view="holdings"]');
+      // Click on a dropdown-bearing nav-item (anywhere except chevron):
+      // let the tab system handle navigation, then sync expanded state
+      var navItem = e.target.closest && e.target.closest('.nav-item-with-dropdown');
       if (navItem) {
-        // Don't preventDefault — tab system needs to handle the click
-        // Wait one tick so it sees `.active`, then expand
         setTimeout(syncExpandedToActive, 0);
         return;
       }
-      // Any other nav-item click → collapse the dropdown
+      // Any other nav-item click → collapse all dropdowns
       var otherNav = e.target.closest && e.target.closest('.nav-item:not(.nav-item-with-dropdown)');
       if (otherNav) setTimeout(syncExpandedToActive, 0);
     });
-    // Initial state: expand if Holdings is the active view on load
+    // Initial state
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', syncExpandedToActive);
     } else {
@@ -8284,8 +8760,12 @@
   });
 
   // ============ WATCHLIST PROJECTION CHARTS ============
+  // Kept for back-compat with any embedded canvases; the new opportunity view
+  // uses TradingView instead, so this is a no-op when those canvases are absent.
   function makeProjection(canvasId, currentPrice, targetPrice, days) {
-    const ctx = document.getElementById(canvasId).getContext('2d');
+    var el = document.getElementById(canvasId);
+    if (!el || !el.getContext) return;
+    const ctx = el.getContext('2d');
     // Generate 30 days of "history" + projection to target
     const labels = [];
     const data = [];
@@ -8597,13 +9077,16 @@
           }, 80);
           return;
         }
-        // Try Opportunities
-        var oppCanvas = document.getElementById('watch' + ticker);
-        if (oppCanvas) {
+        // Try Opportunities (new single-view: select via showOpportunityView)
+        var oppList = (window.briefData && window.briefData.opportunities) || [];
+        var inOpps = oppList.some(function (o) { return o && o.ticker === ticker; });
+        if (inOpps) {
           var navOpps = document.querySelector('.nav-item[data-view="opportunities"]');
           if (navOpps) navOpps.click();
           setTimeout(function () {
-            oppCanvas.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (window.showOpportunityView) window.showOpportunityView(ticker);
+            var osv = document.getElementById('opportunitiesSingleView');
+            if (osv) osv.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }, 80);
           return;
         }
