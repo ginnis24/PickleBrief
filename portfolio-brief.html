@@ -4311,7 +4311,7 @@
         <h3>Position <em>snapshot</em></h3>
         <div class="snapshot-right">
           <span class="snap-conn" id="snapConn" aria-live="polite"><span class="snap-conn-dot"></span><span class="snap-conn-text">Idle</span></span>
-          <button type="button" class="snap-add-btn" id="snapAddBtn" title="Add a position not in your brief">
+          <button type="button" class="snap-add-btn" id="snapAddBtn" title="Add a position not in your brief" onclick="window.__openAddPosition && window.__openAddPosition()">
             <span class="snap-add-plus">+</span><span>Add position</span>
           </button>
           <span class="snapshot-total" id="snapshotTotal">Total · <strong>$0.00</strong> · 0 holdings</span>
@@ -5196,14 +5196,14 @@
     },
     snapshot: {
       rows: [
-        { ticker: "NOW",  shares: "218.83", price: "$91.18",  value: "$19,952.92", today: { display: "−$527.38 · −2.58%", dir: "down" }, alltime: { display: "−$947.53 · −4.53%",   dir: "down" } },
-        { ticker: "DDOG", shares: "29.555", price: "$200.16", value: "$5,915.73",  today: { display: "+$337.81 · +6.06%", dir: "up" },   alltime: { display: "+$2,015.65 · +51.68%", dir: "up" } },
-        { ticker: "CGNT", shares: "200.00", price: "$11.11",  value: "$2,222.00",  today: { display: "+$22.00 · +1.00%",  dir: "up" },   alltime: { display: "+$182.00 · +8.92%",   dir: "up" } },
-        { ticker: "QBTS", shares: "55.230", price: "$22.57",  value: "$1,246.54",  today: { display: "+$32.03 · +2.64%",  dir: "up" },   alltime: { display: "+$46.39 · +3.87%",    dir: "up" } },
-        { ticker: "RGTI", shares: "65.140", price: "$18.94",  value: "$1,233.75",  today: { display: "+$39.08 · +3.27%",  dir: "up" },   alltime: { display: "+$33.87 · +2.82%",    dir: "up" } },
-        { ticker: "NVDA", shares: "6.049",  price: "$215.20", value: "$1,301.74",  today: { display: "+$22.38 · +1.75%",  dir: "up" },   alltime: { display: "+$102.53 · +8.55%",   dir: "up" } },
-        { ticker: "SOUN", shares: "88.000", price: "$8.88",   value: "$781.44",    today: { display: "$0.00 · flat",      dir: "flat" }, alltime: { display: "$0.00 · flat",        dir: "flat" } },
-        { ticker: "HURN", shares: "3.920",  price: "$119.97", value: "$470.28",    today: { display: "−$18.86 · −3.85%",  dir: "down" }, alltime: { display: "−$18.86 · −3.85%",    dir: "down" } }
+        { ticker: "NOW",  shares: "218.83", price: "$91.18",  value: "$19,952.92", today: { display: "−$527.38 · −2.58%", dir: "down" }, alltime: { display: "−$947.53 · −4.53%",   dir: "down" }, high52: 1198.09, low52: 678.66 },
+        { ticker: "DDOG", shares: "29.555", price: "$200.16", value: "$5,915.73",  today: { display: "+$337.81 · +6.06%", dir: "up" },   alltime: { display: "+$2,015.65 · +51.68%", dir: "up" },   high52: 170.08, low52: 81.59 },
+        { ticker: "CGNT", shares: "200.00", price: "$11.11",  value: "$2,222.00",  today: { display: "+$22.00 · +1.00%",  dir: "up" },   alltime: { display: "+$182.00 · +8.92%",   dir: "up" },   high52: 13.20, low52: 5.86 },
+        { ticker: "QBTS", shares: "55.230", price: "$22.57",  value: "$1,246.54",  today: { display: "+$32.03 · +2.64%",  dir: "up" },   alltime: { display: "+$46.39 · +3.87%",    dir: "up" },   high52: 27.39, low52: 0.55 },
+        { ticker: "RGTI", shares: "65.140", price: "$18.94",  value: "$1,233.75",  today: { display: "+$39.08 · +3.27%",  dir: "up" },   alltime: { display: "+$33.87 · +2.82%",    dir: "up" },   high52: 21.42, low52: 0.66 },
+        { ticker: "NVDA", shares: "6.049",  price: "$215.20", value: "$1,301.74",  today: { display: "+$22.38 · +1.75%",  dir: "up" },   alltime: { display: "+$102.53 · +8.55%",   dir: "up" },   high52: 219.93, low52: 86.62 },
+        { ticker: "SOUN", shares: "88.000", price: "$8.88",   value: "$781.44",    today: { display: "$0.00 · flat",      dir: "flat" }, alltime: { display: "$0.00 · flat",        dir: "flat" }, high52: 24.98, low52: 3.45 },
+        { ticker: "HURN", shares: "3.920",  price: "$119.97", value: "$470.28",    today: { display: "−$18.86 · −3.85%",  dir: "down" }, alltime: { display: "−$18.86 · −3.85%",    dir: "down" }, high52: 152.71, low52: 113.69 }
       ],
       total: {
         value: "$33,124.41",
@@ -6173,7 +6173,7 @@
   var __SNAP = (function () {
 
     // ---------- Config ----------
-    var FINNHUB_API_KEY = 'd815djpr01qler4h2f60d815djpr01qler4h2f6g';
+    var FINNHUB_API_KEY = 'd81hmrpr01qler4id0t0d81hmrpr01qler4id0tg';
     var REST_BASE = 'https://finnhub.io/api/v1';
     var WS_URL    = 'wss://ws.finnhub.io?token=' + encodeURIComponent(FINNHUB_API_KEY);
     var POLL_INTERVAL_MS = 30000;      // REST fallback poll interval
@@ -6368,6 +6368,16 @@
           state.liveQuotes[t].price = price;
           state.liveQuotes[t].prevClose = prevClose;
           state.liveQuotes[t].source = 'brief-seed';
+        }
+        // Seed 52-week range from the brief, so the column populates even if
+        // Finnhub is rate-limited / disconnected. Live metric data, when it
+        // arrives, will overwrite these values.
+        var high52 = parseNumber(r.high52 != null ? r.high52 : (r.range_52w && r.range_52w.high));
+        var low52  = parseNumber(r.low52  != null ? r.low52  : (r.range_52w && r.range_52w.low));
+        if (isFinite(high52) && isFinite(low52) && high52 > low52) {
+          state.metrics[t] = state.metrics[t] || {};
+          if (state.metrics[t].high52 == null) state.metrics[t].high52 = high52;
+          if (state.metrics[t].low52  == null) state.metrics[t].low52  = low52;
         }
       });
     }
@@ -6906,6 +6916,9 @@
       modal.classList.add('is-open');
       setTimeout(function () { $('#snapInTicker').focus(); }, 50);
     }
+    // Expose globally so the inline onclick can reach it without depending
+    // on any event-listener wiring. Belt-and-suspenders.
+    window.__openAddPosition = openAddModal;
     function closeAddModal() {
       var modal = $('#snapAddModal');
       if (modal) modal.classList.remove('is-open');

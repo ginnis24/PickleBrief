@@ -2,10 +2,13 @@
 #
 # - Serves the dashboard from /portfolio-brief.html (and the root redirect below)
 # - Two functions under /api/* defined via in-file `export const config` paths
+# - One edge function under netlify/edge-functions/password-gate.js that gates
+#   the whole site with a single shared password from the SITE_PASSWORD env var
 
 [build]
   publish = "."
   functions = "netlify/functions"
+  edge_functions = "netlify/edge-functions"
 
 # Root → dashboard
 [[redirects]]
