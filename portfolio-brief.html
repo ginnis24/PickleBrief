@@ -6482,6 +6482,12 @@
     }
 
     // ---------- Storage ----------
+    // Write-through cache: localStorage is the synchronous source of truth for the
+    // UI (so renders never wait on the network), and /api/positions is the
+    // cross-device durable store. On mutation we write local first then POST in
+    // the background. On boot we hydrate from the API and reconcile.
+    var API_URL = '/api/positions';
+
     function loadUserPositions() {
       try {
         var raw = localStorage.getItem(STORAGE_KEY);
@@ -6490,17 +6496,92 @@
         return Array.isArray(parsed) ? parsed : [];
       } catch (_) { return []; }
     }
+    function writeUserPositionsLocal(userOnly) {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(userOnly)); }
+      catch (e) { console.warn('Could not persist user positions to localStorage:', e); }
+    }
     function saveUserPositions(positions) {
-      try {
-        var userOnly = positions.filter(function (p) { return p.source === 'user'; })
-          .map(function (p) {
+      // Synchronous: write local cache so the next render sees the change.
+      var userOnly = positions.filter(function (p) { return p.source === 'user'; })
+        .map(function (p) {
+          return {
+            ticker: p.ticker, shares: p.shares, avgCost: p.avgCost,
+            sector: p.sector, notes: p.notes, addedAt: p.addedAt
+          };
+        });
+      writeUserPositionsLocal(userOnly);
+      // Async: push to API so other devices see it. Failures are non-fatal —
+      // localStorage still holds the latest, and the next hydrate will reconcile.
+      syncPositionsToApi(userOnly);
+    }
+
+    // Push the full user-only list to the backend with a single bulk-set call.
+    // Debounced so a flurry of edits doesn't fan out into duplicate requests.
+    var __syncTimer = null;
+    var __syncInFlight = false;
+    var __syncPending = null;
+    function syncPositionsToApi(userOnly) {
+      __syncPending = userOnly;
+      if (__syncTimer) clearTimeout(__syncTimer);
+      __syncTimer = setTimeout(function () {
+        __syncTimer = null;
+        if (__syncInFlight) return; // a later setTimeout will pick up __syncPending
+        var payload = __syncPending;
+        __syncPending = null;
+        __syncInFlight = true;
+        fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'bulk-set', positions: payload })
+        }).then(function (r) {
+          if (!r.ok && r.status !== 429) console.warn('positions sync HTTP', r.status);
+        }).catch(function (e) {
+          console.warn('positions sync failed:', e);
+        }).then(function () {
+          __syncInFlight = false;
+          // If more edits piled up while we were in flight, flush them now.
+          if (__syncPending) syncPositionsToApi(__syncPending);
+        });
+      }, 400);
+    }
+
+    // One-shot hydrate: pull the canonical list from the API and merge into
+    // localStorage + state. Runs at boot. Returns a promise that resolves when
+    // hydration is complete (or fails). Idempotent and safe to call again.
+    function hydratePositionsFromApi() {
+      return fetch(API_URL, { method: 'GET', cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) {
+          if (!data || !Array.isArray(data.positions)) return false;
+          var remote = data.positions;
+          var local = loadUserPositions();
+
+          // Migration: if the backend is empty and we have local positions,
+          // push them up (one-time, automatic on first deploy with this code).
+          if (remote.length === 0 && local.length > 0) {
+            syncPositionsToApi(local);
+            return false; // nothing to merge in
+          }
+
+          // Otherwise: remote wins. Overwrite local with the canonical list so
+          // a stale device picks up changes made elsewhere.
+          var normalized = remote.map(function (p) {
             return {
-              ticker: p.ticker, shares: p.shares, avgCost: p.avgCost,
-              sector: p.sector, notes: p.notes, addedAt: p.addedAt
+              ticker: String(p.ticker || '').toUpperCase(),
+              shares: Number(p.shares),
+              avgCost: Number(p.avgCost),
+              sector: p.sector || null,
+              notes: p.notes || null,
+              addedAt: Number(p.addedAt) || Date.now()
             };
           });
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(userOnly));
-      } catch (e) { console.warn('Could not persist user positions:', e); }
+          writeUserPositionsLocal(normalized);
+          return true; // caller should rebuild positions if state already loaded
+        })
+        .catch(function (e) {
+          console.warn('positions hydrate failed:', e);
+          return false;
+        });
     }
 
     // ---------- Position model ----------
@@ -7273,6 +7354,25 @@
       });
 
       attachTableHandlers();
+
+      // Hydrate user positions from the cross-device API in the background.
+      // We don't block the initial render on this — localStorage already paints
+      // the last-known list — but when the API responds we rebuild state.positions
+      // so a new device or fresh browser picks up positions added elsewhere.
+      hydratePositionsFromApi().then(function (changed) {
+        if (!changed) return;
+        // Rebuild from the merged source (briefData + freshly-hydrated localStorage)
+        state.positions = buildPositions(window.briefData || {});
+        // Subscribe any newly-arrived user tickers to the WS / metrics pipeline
+        var tickers = state.positions.map(function (p) { return p.ticker; });
+        if (state.ws && state.ws.readyState === 1) {
+          tickers.forEach(wsSubscribe);
+        }
+        ensureMetrics(tickers).then(render);
+        restRefreshAll();
+        render();
+        firePositionsChange();
+      });
 
       // If briefData is already populated (the inline default brief in this file),
       // pick it up immediately. Otherwise, wait for renderSnapshot to be called.
