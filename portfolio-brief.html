@@ -1792,7 +1792,7 @@
 
   /* Drag-active overlay: when a file is being dragged onto the page */
   body.drag-active::after {
-    content: 'Drop your brief.json to load';
+    content: 'Drop a brief.json or Fidelity positions CSV';
     position: fixed;
     inset: 0;
     z-index: 9999;
@@ -4336,6 +4336,14 @@
         <div id="briefLoaderStatus" class="brief-loader-status" role="status" aria-live="polite"></div>
       </div>
 
+      <!-- Positions loader: import Fidelity CSV export to replace the position tracker -->
+      <div class="brief-loader" role="group" aria-label="Position data">
+        <button id="positionsLoaderBtn" type="button" class="brief-loader-btn" title="Import Fidelity Portfolio_Positions CSV export">⤓ Load positions</button>
+        <input id="positionsLoaderInput" type="file" accept="text/csv,.csv" hidden />
+        <button id="positionsLoaderClear" type="button" class="brief-loader-clear" title="Remove all CSV-imported positions">Clear</button>
+        <div id="positionsLoaderStatus" class="brief-loader-status" role="status" aria-live="polite"></div>
+      </div>
+
       <div class="api-status" aria-live="polite">
         <span class="api-status-dot"></span>
         <span id="apiStatusPill" data-kind="ok">Synced</span>
@@ -6585,69 +6593,98 @@
     }
 
     // ---------- Position model ----------
-    // Build the unified positions list from briefData + localStorage userPositions
+    // Build the unified positions list from briefData + localStorage userPositions.
+    //
+    // Semantics:
+    //   - If user/CSV positions exist in localStorage, they define the UNIVERSE
+    //     of tickers. Brief rows only contribute display metadata (sector, name,
+    //     summary, call, avg_target) for tickers also in the user list.
+    //   - If user/CSV positions are empty, brief rows fall through as-is (legacy
+    //     behavior, so a fresh device with just a brief loaded still shows
+    //     something useful).
+    // This makes the Fidelity CSV the authoritative holdings list. Loading a
+    // new CSV that drops a ticker drops it from the tracker regardless of
+    // whether the previously loaded brief still mentions it.
     function buildPositions(briefData) {
       var d = briefData || {};
       var positions = [];
       var seen = {};
 
-      // Brief-driven positions from snapshot.rows
       var rows = (d.snapshot && d.snapshot.rows) || [];
       var holdingsByTicker = {};
       (d.holdings || []).forEach(function (h) { holdingsByTicker[h.ticker] = h; });
 
+      var userList = loadUserPositions();
+      var userByTicker = {};
+      userList.forEach(function (u) {
+        var t = String(u.ticker || '').toUpperCase();
+        if (t) userByTicker[t] = u;
+      });
+      var userIsAuthoritative = userList.length > 0;
+
+      // Build a quick lookup of brief snapshot rows by ticker for enrichment
+      var briefRowsByTicker = {};
       rows.forEach(function (r) {
         var t = String(r.ticker).toUpperCase();
-        if (seen[t]) return;
-        seen[t] = true;
-        var h = holdingsByTicker[t];
-        var avgCost = NaN;
-        if (h && h.shares_cost) {
-          var after = h.shares_cost.split('@')[1];
-          if (after) avgCost = parseNumber(after);
-        }
-        if (!isFinite(avgCost)) avgCost = state.avgCostFallback[t];
-
-        positions.push({
-          source:        'brief',
-          ticker:        t,
-          shares:        parseNumber(r.shares),
-          avgCost:       avgCost,
-          sector:        h ? h.sector_label : null,
-          name:          h ? h.name : null,
-          notes:         null,
-          hasEarnings:   h ? !!h.urgent : false,
-          earningsLabel: h ? h.earnings_label : null,
-          summary:       h ? h.summary : null,
-          call:          h ? h.call_label : null,
-          avgTarget:     h && h.avg_target ? h.avg_target.price : null
-        });
+        briefRowsByTicker[t] = r;
       });
 
-      // User-added positions from localStorage
-      loadUserPositions().forEach(function (u) {
-        var t = String(u.ticker).toUpperCase();
-        if (seen[t]) return; // brief takes precedence if same ticker
-        seen[t] = true;
-        positions.push({
-          source:  'user',
-          ticker:  t,
-          shares:  parseNumber(u.shares),
-          avgCost: parseNumber(u.avgCost),
-          sector:  u.sector || null,
-          name:    null,
-          notes:   u.notes || null,
-          hasEarnings:   false,
-          earningsLabel: null,
-          summary:  null,
-          call:     null,
-          avgTarget: null,
-          addedAt:  u.addedAt
+      if (userIsAuthoritative) {
+        // User/CSV positions define the ticker universe. Iterate them in their
+        // stored order (which is CSV order for a CSV load, add-order for the
+        // legacy modal). Enrich with brief metadata where available.
+        userList.forEach(function (u) {
+          var t = String(u.ticker || '').toUpperCase();
+          if (!t || seen[t]) return;
+          seen[t] = true;
+          var h = holdingsByTicker[t]; // brief detail for this ticker, if any
+          positions.push({
+            source:        'user',
+            ticker:        t,
+            shares:        parseNumber(u.shares),
+            avgCost:       parseNumber(u.avgCost),
+            sector:        u.sector || (h ? h.sector_label : null),
+            name:          h ? h.name : null,
+            notes:         u.notes || null,
+            hasEarnings:   h ? !!h.urgent : false,
+            earningsLabel: h ? h.earnings_label : null,
+            summary:       h ? h.summary : null,
+            call:          h ? h.call_label : null,
+            avgTarget:     h && h.avg_target ? h.avg_target.price : null,
+            addedAt:       u.addedAt
+          });
         });
-      });
+      } else {
+        // Legacy fallback: no user positions, so brief rows are the tracker.
+        rows.forEach(function (r) {
+          var t = String(r.ticker).toUpperCase();
+          if (seen[t]) return;
+          seen[t] = true;
+          var h = holdingsByTicker[t];
+          var avgCost = NaN;
+          if (h && h.shares_cost) {
+            var after = h.shares_cost.split('@')[1];
+            if (after) avgCost = parseNumber(after);
+          }
+          if (!isFinite(avgCost)) avgCost = state.avgCostFallback[t];
 
-      // Sort: brief positions first (in brief order), then user positions by added time
-      // Within each group, order by value (desc) once we have prices.
+          positions.push({
+            source:        'brief',
+            ticker:        t,
+            shares:        parseNumber(r.shares),
+            avgCost:       avgCost,
+            sector:        h ? h.sector_label : null,
+            name:          h ? h.name : null,
+            notes:         null,
+            hasEarnings:   h ? !!h.urgent : false,
+            earningsLabel: h ? h.earnings_label : null,
+            summary:       h ? h.summary : null,
+            call:          h ? h.call_label : null,
+            avgTarget:     h && h.avg_target ? h.avg_target.price : null
+          });
+        });
+      }
+
       return positions;
     }
 
@@ -7607,10 +7644,17 @@
   // key metrics, analyst actions, news). The old static 5-card grid is gone.
   function renderOpportunities(opps) {
     renderOpportunitiesDropdown(opps);
+    var list = opps || [];
+    if (!list.length) {
+      // Surface the empty state explicitly so a stale "Select from sidebar"
+      // message never lingers when the brief has no opportunities.
+      if (window.showOpportunityView) window.showOpportunityView('');
+      return;
+    }
     // Restore last-selected opportunity (or default to first available).
     var saved = '';
     try { saved = localStorage.getItem('pb-selectedOpportunity') || ''; } catch (_) {}
-    var available = (opps || []).map(function (o) { return o.ticker; });
+    var available = list.map(function (o) { return o.ticker; });
     if (!saved || available.indexOf(saved) < 0) saved = available[0] || '';
     if (saved) showOpportunityView(saved);
   }
@@ -7651,9 +7695,13 @@
     var d = window.briefData || {};
     var opps = d.opportunities || [];
     var available = opps.map(function (o) { return o.ticker; });
+    if (!available.length) {
+      single.innerHTML = '<div class="osv-empty">No opportunities in the current brief. Load a brief from the sidebar to see vetted tech ideas with 50%+ projected upside.</div>';
+      return;
+    }
     if (!ticker || available.indexOf(ticker) < 0) ticker = available[0] || '';
     if (!ticker) {
-      single.innerHTML = '<div class="osv-empty">No opportunities in this brief.</div>';
+      single.innerHTML = '<div class="osv-empty">No opportunities in the current brief. Load a brief from the sidebar to see vetted tech ideas with 50%+ projected upside.</div>';
       return;
     }
 
@@ -8658,9 +8706,10 @@
     if (data.calendar && data.calendar.months && data.calendar.months.length) {
       try { renderCalendar(data.calendar); }  catch (e) { console.warn('renderCalendar',   e); }
     }
-    if (data.opportunities && data.opportunities.length) {
-      try { renderOpportunities(data.opportunities); } catch (e) { console.warn('renderOpportunities', e); }
-    }
+    // Always call renderOpportunities (even with []) so the stale static
+    // "5" in the sidebar count gets cleared and the empty-state message
+    // becomes accurate when no real brief is loaded.
+    try { renderOpportunities(data.opportunities || []); } catch (e) { console.warn('renderOpportunities', e); }
     try { renderResearch(data.research || []); } catch (e) { console.warn('renderResearch', e); }
     // Consume watchlist tickers the brief reports it acted on. Idempotent on
     // the server so this is safe to run every time any device loads the brief.
@@ -8788,7 +8837,14 @@
         e.preventDefault();
         document.body.classList.remove('drag-active');
         var files = e.dataTransfer && e.dataTransfer.files;
-        if (files && files[0]) loadJsonFile(files[0]);
+        if (!files || !files[0]) return;
+        var f = files[0];
+        var name = (f.name || '').toLowerCase();
+        if (name.endsWith('.csv') && typeof window.__loadPositionsCsv === 'function') {
+          window.__loadPositionsCsv(f);
+        } else {
+          loadJsonFile(f);
+        }
       });
 
       // Initial render. If localStorage had saved data, briefData was already
@@ -8855,6 +8911,244 @@
           } catch (_) {}
         }).catch(function () {});
       }
+    });
+  })();
+
+
+  // ============ FIDELITY CSV → POSITIONS LOADER ============
+  //
+  // Imports a Fidelity "Portfolio_Positions_<date>.csv" export and replaces
+  // the dashboard's user-position list with the rows in the CSV. The CSV is
+  // the authoritative holdings snapshot; brief-driven snapshot.rows continue
+  // to coexist for any ticker also present in the brief, but anything in the
+  // CSV becomes a tracked position regardless.
+  //
+  // What we keep from the CSV: Symbol, Description, Quantity, Average Cost
+  // Basis. (Live price/day-change come from Finnhub via the existing
+  // SNAP pipeline — we do NOT trust the CSV's snapshotted prices, they
+  // become stale within minutes.)
+  //
+  // What we skip:
+  //   - Money-market row (Symbol ends with "**", e.g. SPAXX**)
+  //   - "Pending activity" row (no Symbol)
+  //   - Disclaimer / blank lines after the data block
+  (function () {
+    var STORAGE_KEY = 'pb-user-positions-v1';  // shared with SNAP module — same key
+
+    function flashStatus(msg, isError) {
+      var el = document.getElementById('positionsLoaderStatus');
+      if (!el) return;
+      el.textContent = msg;
+      el.className = 'brief-loader-status ' + (isError ? 'err' : 'ok') + ' show';
+      setTimeout(function () { el.classList.remove('show'); }, 3000);
+    }
+
+    // RFC-4180-ish CSV line splitter — Fidelity doesn't quote much, but
+    // descriptions occasionally contain commas, so we still respect quotes.
+    function splitCsvLine(line) {
+      var out = [];
+      var cur = '';
+      var inQuotes = false;
+      for (var i = 0; i < line.length; i++) {
+        var ch = line.charAt(i);
+        if (inQuotes) {
+          if (ch === '"') {
+            if (line.charAt(i + 1) === '"') { cur += '"'; i++; }
+            else inQuotes = false;
+          } else {
+            cur += ch;
+          }
+        } else {
+          if (ch === ',') { out.push(cur); cur = ''; }
+          else if (ch === '"') inQuotes = true;
+          else cur += ch;
+        }
+      }
+      out.push(cur);
+      return out;
+    }
+
+    // Strip $, commas, +, whitespace, U+2212 (Unicode minus) → JS number.
+    function parseFidelityNumber(s) {
+      if (s == null) return NaN;
+      var cleaned = String(s).replace(/[\$,\s\+]/g, '').replace(/\u2212/g, '-');
+      if (!cleaned || cleaned === '-' || cleaned === '--') return NaN;
+      var n = parseFloat(cleaned);
+      return isFinite(n) ? n : NaN;
+    }
+
+    function parseFidelityCsv(text) {
+      // Strip BOM if present (Fidelity exports include UTF-8 BOM)
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+
+      var lines = text.split(/\r?\n/);
+      if (!lines.length) throw new Error('Empty CSV');
+
+      var header = splitCsvLine(lines[0]).map(function (h) { return h.trim(); });
+      var idx = {};
+      ['Symbol','Description','Quantity','Average Cost Basis','Last Price','Account Name','Cost Basis Total'].forEach(function (name) {
+        var i = header.indexOf(name);
+        if (i >= 0) idx[name] = i;
+      });
+      if (idx['Symbol'] == null || idx['Quantity'] == null) {
+        throw new Error('Not a Fidelity Positions CSV (missing Symbol or Quantity column).');
+      }
+
+      var positions = [];
+      var skipped = { cash: 0, pending: 0, empty: 0, malformed: 0 };
+
+      for (var r = 1; r < lines.length; r++) {
+        var raw = lines[r];
+        if (!raw || !raw.trim()) { skipped.empty++; continue; }
+        // Fidelity appends disclaimer text in quoted paragraphs after the data
+        // block — they don't have the right column count. Stop at the first
+        // line that doesn't look like a position row.
+        if (raw.charAt(0) === '"' && raw.indexOf('spreadsheet') >= 0) break;
+
+        var cols = splitCsvLine(raw);
+        if (cols.length < header.length - 2) { skipped.malformed++; continue; }
+
+        var symbol = (cols[idx['Symbol']] || '').trim();
+        if (!symbol) {
+          // Blank Symbol — treat as a pending-style row
+          skipped.pending++;
+          continue;
+        }
+        // Money-market positions (SPAXX**, FDRXX**, etc.) — Fidelity flags
+        // these with trailing asterisks. Skip; they aren't tradeable equities.
+        if (symbol.indexOf('**') >= 0) { skipped.cash++; continue; }
+        // "Pending activity" appears in the Symbol column with a negative
+        // Current Value and no Quantity. Not a position.
+        if (/^pending\s+activity/i.test(symbol)) { skipped.pending++; continue; }
+
+        var qty = parseFidelityNumber(cols[idx['Quantity']]);
+        if (!isFinite(qty) || qty <= 0) { skipped.malformed++; continue; }
+
+        var avgCost = idx['Average Cost Basis'] != null
+          ? parseFidelityNumber(cols[idx['Average Cost Basis']]) : NaN;
+        // Fall back to cost-basis-total / shares if avg cost is blank
+        if (!isFinite(avgCost) && idx['Cost Basis Total'] != null) {
+          var tot = parseFidelityNumber(cols[idx['Cost Basis Total']]);
+          if (isFinite(tot) && qty > 0) avgCost = tot / qty;
+        }
+        // Last fallback: use last price so the position renders without
+        // a misleading 0 avg cost. Brief will overwrite next run.
+        if (!isFinite(avgCost) && idx['Last Price'] != null) {
+          avgCost = parseFidelityNumber(cols[idx['Last Price']]);
+        }
+        if (!isFinite(avgCost) || avgCost <= 0) { skipped.malformed++; continue; }
+
+        var desc = idx['Description'] != null ? (cols[idx['Description']] || '').trim() : '';
+
+        positions.push({
+          ticker: symbol.toUpperCase(),
+          shares: qty,
+          avgCost: avgCost,
+          sector: null,           // unknown from CSV; SNAP fetches from Finnhub profile
+          notes: desc || null,    // company description from Fidelity for context
+          addedAt: Date.now()
+        });
+      }
+
+      return { positions: positions, skipped: skipped };
+    }
+
+    function applyPositions(parsed, sourceLabel) {
+      var SNAP = window.__snapshot;
+      if (!SNAP || !SNAP.state) {
+        flashStatus('Position tracker not ready — refresh and retry', true);
+        return;
+      }
+      var positions = parsed.positions;
+      if (!positions.length) {
+        flashStatus('No positions found in CSV', true);
+        return;
+      }
+
+      // 1. Write the new list to localStorage (the SNAP module's source of truth
+      //    for user positions across renders).
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(positions));
+      } catch (e) {
+        console.warn('Could not persist CSV positions to localStorage:', e);
+      }
+
+      // 2. Push to /api/positions so other devices see it. Same shape SNAP uses.
+      fetch('/api/positions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'bulk-set', positions: positions })
+      }).then(function (r) {
+        if (!r.ok && r.status !== 429) console.warn('positions sync HTTP', r.status);
+      }).catch(function (e) {
+        console.warn('positions sync failed:', e);
+      });
+
+      // 3. Rebuild SNAP state from briefData + the new userPositions in storage.
+      //    loadFromBrief reads storage internally, so just re-invoke it with the
+      //    current briefData. If no briefData, pass an empty snapshot.
+      var bd = window.briefData || {};
+      try {
+        SNAP.loadFromBrief(bd.snapshot || { rows: [] }, bd);
+      } catch (e) {
+        console.warn('SNAP rebuild failed:', e);
+      }
+
+      var msg = '✓ Loaded ' + positions.length + ' position' + (positions.length === 1 ? '' : 's');
+      if (parsed.skipped.cash)    msg += ' · skipped ' + parsed.skipped.cash + ' cash';
+      if (parsed.skipped.pending) msg += ' · ' + parsed.skipped.pending + ' pending';
+      flashStatus(msg);
+    }
+
+    function loadCsvFile(file) {
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          var parsed = parseFidelityCsv(e.target.result);
+          applyPositions(parsed, file.name);
+        } catch (err) {
+          flashStatus('✗ ' + (err.message || 'Could not parse CSV'), true);
+          console.error(err);
+        }
+      };
+      reader.onerror = function () {
+        flashStatus('✗ Could not read file', true);
+      };
+      reader.readAsText(file);
+    }
+
+    // Expose for the global drag-and-drop handler in the brief loader.
+    window.__loadPositionsCsv = loadCsvFile;
+
+    function clearCsvPositions() {
+      if (!confirm('Clear all imported positions? This removes CSV-loaded holdings from this device and the cloud.')) return;
+      try { localStorage.setItem(STORAGE_KEY, '[]'); } catch (_) {}
+      fetch('/api/positions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'bulk-set', positions: [] })
+      }).catch(function () {});
+      var SNAP = window.__snapshot;
+      var bd = window.briefData || {};
+      if (SNAP && SNAP.loadFromBrief) {
+        try { SNAP.loadFromBrief(bd.snapshot || { rows: [] }, bd); }
+        catch (_) {}
+      }
+      flashStatus('Cleared imported positions');
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      var btn   = document.getElementById('positionsLoaderBtn');
+      var input = document.getElementById('positionsLoaderInput');
+      var clear = document.getElementById('positionsLoaderClear');
+      if (btn && input) btn.addEventListener('click', function () { input.click(); });
+      if (input) input.addEventListener('change', function (e) {
+        if (e.target.files && e.target.files[0]) loadCsvFile(e.target.files[0]);
+        // Reset so the same file can be re-loaded
+        try { e.target.value = ''; } catch (_) {}
+      });
+      if (clear) clear.addEventListener('click', clearCsvPositions);
     });
   })();
 
