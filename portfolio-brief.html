@@ -6175,6 +6175,18 @@
 
   function renderHero(p) {
     if (!p) return;
+    // Eyebrow: "Portfolio · N Holdings". Pulled from p.holdings_count when the
+    // brief supplies it, else falls back to snapshot.rows count. The hardcoded
+    // "8 Holdings" in the static HTML never updates, so we set it here.
+    var eyebrow = document.querySelector('.hero .eyebrow');
+    if (eyebrow) {
+      var n = (p.holdings_count != null)
+        ? p.holdings_count
+        : (window.briefData && window.briefData.snapshot && window.briefData.snapshot.rows)
+            ? window.briefData.snapshot.rows.length
+            : null;
+      if (n != null) eyebrow.textContent = 'Portfolio · ' + n + ' Holdings';
+    }
     // Total value
     var heroVal = document.querySelector('.hero-value');
     if (heroVal && p.total_value != null) {
@@ -6248,6 +6260,23 @@
 
   function renderAttribution(a) {
     if (!a) return;
+    // Tolerate two shapes for detractors/contributors:
+    //   - array of strings: ["NOW", "DDOG", ...]
+    //   - array of objects: [{ticker:"NOW", dollar:-100}, ...]
+    // Some briefs emit the object form; the original schema was strings.
+    function toLabel(x) {
+      if (x == null) return '';
+      if (typeof x === 'string') return x;
+      if (typeof x === 'object') {
+        var t = x.ticker || x.symbol || '';
+        if (x.dollar != null) {
+          var sign = x.dollar < 0 ? '−' : x.dollar > 0 ? '+' : '';
+          return t + (t ? ' ' : '') + sign + '$' + Math.abs(Math.round(x.dollar));
+        }
+        return t || String(x);
+      }
+      return String(x);
+    }
     var totalAbs = a.bars.reduce(function (sum, b) { return sum + Math.abs(b.dollar); }, 0) || 1;
     var barsEl = document.querySelector('.attribution-bars');
     if (barsEl) {
@@ -6265,9 +6294,11 @@
     setText('.attribution-title strong', a.net_label);
     var legend = document.querySelector('.attribution-legend');
     if (legend) {
+      var detrStr = (a.detractors || []).map(toLabel).filter(Boolean).join(', ');
+      var contStr = (a.contributors || []).map(toLabel).filter(Boolean).join(', ');
       legend.innerHTML =
-        '<span class="leg-item"><span class="leg-dot" style="background:rgba(248,122,141,0.85)"></span>Detractors: ' + escapeHtml((a.detractors || []).join(', ')) + '</span>' +
-        '<span class="leg-item"><span class="leg-dot" style="background:rgba(124,224,168,0.85)"></span>Contributors: ' + escapeHtml((a.contributors || []).join(', ')) + '</span>' +
+        '<span class="leg-item"><span class="leg-dot" style="background:rgba(248,122,141,0.85)"></span>Detractors: ' + escapeHtml(detrStr) + '</span>' +
+        '<span class="leg-item"><span class="leg-dot" style="background:rgba(124,224,168,0.85)"></span>Contributors: ' + escapeHtml(contStr) + '</span>' +
         '<span class="leg-item">Hover bars for detail</span>';
     }
   }
@@ -6368,19 +6399,27 @@
     }
     var strip = document.querySelector('.week-strip');
     if (!strip || !tw.days) return;
+    // Tolerate alternate field names. Skill schema is { weekday, date,
+    // ticker, event, detail }, but observed briefs sometimes emit { day,
+    // date_label } or { dow, day_num }. Coerce defensively.
+    function getDay(d)   { return d.weekday || d.day || d.dow || ''; }
+    function getDate(d)  { return (d.date != null ? d.date : (d.date_label != null ? d.date_label : (d.day_num != null ? d.day_num : ''))); }
+    function getEvent(d) { return d.event || d.kind || d.label || 'Event'; }
     strip.innerHTML = tw.days.map(function (d) {
+      var day = getDay(d);
+      var date = getDate(d);
       if (!d.ticker) {
         return '<div class="week-card empty">' +
-          '<div class="day">' + escapeHtml(d.weekday) + '</div>' +
-          '<div class="date">' + d.date + '</div>' +
+          '<div class="day">' + escapeHtml(day) + '</div>' +
+          '<div class="date">' + escapeHtml(String(date)) + '</div>' +
           '<div class="event-detail">No events</div>' +
         '</div>';
       }
       return '<div class="week-card">' +
         '<a class="add-cal" href="#" title="Add to Calendar">＋</a>' +
-        '<div class="day">' + escapeHtml(d.weekday) + '</div>' +
-        '<div class="date">' + d.date + '</div>' +
-        '<div class="event-tag">' + escapeHtml(d.ticker) + ' · ' + escapeHtml(d.event) + '</div>' +
+        '<div class="day">' + escapeHtml(day) + '</div>' +
+        '<div class="date">' + escapeHtml(String(date)) + '</div>' +
+        '<div class="event-tag">' + escapeHtml(d.ticker) + ' · ' + escapeHtml(getEvent(d)) + '</div>' +
         '<div class="event-detail">' + escapeHtml(d.detail || '') + '</div>' +
       '</div>';
     }).join('');
